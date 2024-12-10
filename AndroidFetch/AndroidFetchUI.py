@@ -10,7 +10,6 @@ from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
 from kivy.properties import StringProperty, BooleanProperty
 
 import subprocess
-import platform
 import webbrowser
 
 ButtonPressNum = 0
