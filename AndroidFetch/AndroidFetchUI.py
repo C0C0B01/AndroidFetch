@@ -32,7 +32,7 @@ KernelInfo = GetProp("ro.kernel.version")
 BootloaderInfo = GetProp("sys.oem_unlock_allowed")
 BootloaderInfo = "Unlocked" if BootloaderInfo == "1" else "Locked"
 SELinux = GetProp("ro.boot.selinux")
-Languege = GetProp("persist.sys.locale")
+Language = GetProp("persist.sys.locale")
 TimeZone = GetProp("persist.sys.timezone")
 KnoxVersion = ""
 AndroidFlavour = "Unknown"
@@ -389,7 +389,7 @@ class AndroidFetch(App):
     button2_text = StringProperty(f"VNDK Version: {VNDKInfo} \nKernel Version: {KernelInfo}")
     button3_text = StringProperty(f"Phone: {ModelName} \nManufactorer: {PhoneMaker}")
     button4_text = StringProperty(f"CPU: {CPUInfo} \nManufactorer: {CPUMaker} \nArch: {ArchInfo}")
-    button5_text = StringProperty(f"Language: {Languege} \nTime Zone: {TimeZone}")
+    button5_text = StringProperty(f"Language: {Language} \nTime Zone: {TimeZone}")
     button6_text = StringProperty(f"HDR: {HDRInfo} \nWide Colour: {WideColourInfo} \nVariable FPS: {VariableFPS}")
         
     def secret_title(self, instance):
