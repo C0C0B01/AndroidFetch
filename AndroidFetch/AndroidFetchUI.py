@@ -10,8 +10,8 @@ from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
 from kivy.properties import StringProperty, BooleanProperty
 
 import subprocess
-import platform
 import webbrowser
+from functools import lru_cache
 
 ButtonPressNum = 0
 TitleSecret = ""
@@ -19,12 +19,10 @@ CustomFlavour = ""
 CustomCPUName = ""
 PickedFont = ""
 
+@lru_cache(maxsize=None)
 def GetProp(Prop):
     result = subprocess.run(f"getprop {Prop}", shell=True, capture_output=True, text=True)
-    if result.returncode == 0:
-        return result.stdout.strip()
-    else:
-        return f"Error: {Prop} not found or failed to execute."
+    return result.stdout.strip() if result.returncode == 0 else f"Error: {Prop} not found or failed to execute."
 
 SDKInfo = GetProp("ro.build.version.sdk")
 AndroidInfo = GetProp("ro.build.version.release")
@@ -32,8 +30,7 @@ ModelName = GetProp("ro.product.model")
 VNDKInfo = GetProp("ro.vndk.version")
 KernelInfo = GetProp("ro.kernel.version")
 BootloaderInfo = GetProp("sys.oem_unlock_allowed")
-BootloaderInfo = BootloaderInfo.replace("0", "Locked")
-BootloaderInfo = BootloaderInfo.replace("1", "Unlocked")
+BootloaderInfo = "Unlocked" if BootloaderInfo == "1" else "Locked"
 SELinux = GetProp("ro.boot.selinux")
 Languege = GetProp("persist.sys.locale")
 TimeZone = GetProp("persist.sys.timezone")
@@ -44,8 +41,7 @@ ArchInfo = GetProp("ro.product.cpu.abi")
 CPUInfo = GetProp("ro.netflix.bsp_rev")
 CPUMaker = GetProp("ro.hardware.egl")
 HDRInfo = GetProp("ro.surface_flinger.has_HDR_display")
-HDRInfo = HDRInfo.replace("true", "supported")
-HDRInfo = HDRInfo.replace("false", "unsupported")
+HDRInfo = "supported" if HDRInfo == "true" else "unsupported"
 WideColourInfo = GetProp("ro.surface_flinger.has_wide_color_display")
 WideColourInfo = WideColourInfo.replace("true", "supported")
 WideColourInfo = WideColourInfo.replace("false", "unsupported")
@@ -68,8 +64,15 @@ class SettingsScreen(Screen):
     flavour = StringProperty(CustomFlavour)
     cpu_name = StringProperty(CustomCPUName)
     def save_config(self):
-        with open("config.txt", "r") as file:
-            lines = file.readlines()
+        try:
+            with open("config.txt", "r") as file:
+                lines = file.readlines()
+        except FileNotFoundError:
+            lines = [""] * 5  # Default lines if file is missing
+        except Exception as e:
+            print(f"Error reading config file: {e}")
+            lines = [""] * 5
+        
         if self.flavour:
             lines[1] = f"{self.flavour}\n"
         if self.cpu_name:
@@ -99,8 +102,11 @@ Font = "Fonts/NotoSans-Regular.ttf"
 with open("config.txt", "r") as file:
     lines = file.readlines()
 if lines:
-    if lines[4] != "":
+    if len(lines) > 4 and lines[4].strip():
         lines[4] = Font
+    else:
+        lines.append(Font)
+
 
 LabelBase.register(name="Default", fn_regular=Font)
 LabelBase.register(name="NotoEmojis", fn_regular="Fonts/NotoEmoji-Regular.ttf")
