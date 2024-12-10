@@ -32,8 +32,7 @@ ModelName = GetProp("ro.product.model")
 VNDKInfo = GetProp("ro.vndk.version")
 KernelInfo = GetProp("ro.kernel.version")
 BootloaderInfo = GetProp("sys.oem_unlock_allowed")
-BootloaderInfo = BootloaderInfo.replace("0", "Locked")
-BootloaderInfo = BootloaderInfo.replace("1", "Unlocked")
+BootloaderInfo = "Unlocked" if BootloaderInfo == "1" else "Locked"
 SELinux = GetProp("ro.boot.selinux")
 Languege = GetProp("persist.sys.locale")
 TimeZone = GetProp("persist.sys.timezone")
@@ -44,8 +43,7 @@ ArchInfo = GetProp("ro.product.cpu.abi")
 CPUInfo = GetProp("ro.netflix.bsp_rev")
 CPUMaker = GetProp("ro.hardware.egl")
 HDRInfo = GetProp("ro.surface_flinger.has_HDR_display")
-HDRInfo = HDRInfo.replace("true", "supported")
-HDRInfo = HDRInfo.replace("false", "unsupported")
+HDRInfo = "supported" if HDRInfo == "true" else "unsupported"
 WideColourInfo = GetProp("ro.surface_flinger.has_wide_color_display")
 WideColourInfo = WideColourInfo.replace("true", "supported")
 WideColourInfo = WideColourInfo.replace("false", "unsupported")
@@ -68,8 +66,15 @@ class SettingsScreen(Screen):
     flavour = StringProperty(CustomFlavour)
     cpu_name = StringProperty(CustomCPUName)
     def save_config(self):
-        with open("config.txt", "r") as file:
-            lines = file.readlines()
+        try:
+            with open("config.txt", "r") as file:
+                lines = file.readlines()
+        except FileNotFoundError:
+            lines = [""] * 5  # Default lines if file is missing
+        except Exception as e:
+            print(f"Error reading config file: {e}")
+            lines = [""] * 5
+        
         if self.flavour:
             lines[1] = f"{self.flavour}\n"
         if self.cpu_name:
