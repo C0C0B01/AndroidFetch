@@ -68,7 +68,7 @@ class SettingsScreen(Screen):
             with open("config.txt", "r") as file:
                 lines = file.readlines()
         except FileNotFoundError:
-            lines = [""] * 5  # Default lines if file is missing
+            lines = [""] * 5
         except Exception as e:
             print(f"Error reading config file: {e}")
             lines = [""] * 5
@@ -85,6 +85,21 @@ class FontPickerScreen(Screen):
         app = App.get_running_app()
         if selection:
             app.PickedFont = selection[0] 
+            try:
+                with open("config.txt", "r") as file:
+                    lines = file.readlines()
+            except FileNotFoundError:
+                lines = ["\n"] * 5
+            except Exception as e:
+                print(f"Error reading config file: {e}")
+                lines = ["\n"] * 5
+            lines[5] = f"{app.PickedFont}\n"
+            try:
+                with open("config.txt", "w") as file:
+                    file.writelines(lines)
+                print(f"Font '{app.PickedFont}' successfully written to config.txt")
+            except Exception as e:
+                print(f"Error writing to config file: {e}")
             
 class SettingsAboutScreen(Screen):
 	pass
@@ -102,8 +117,8 @@ Font = "Fonts/NotoSans-Regular.ttf"
 with open("config.txt", "r") as file:
     lines = file.readlines()
 if lines:
-    if len(lines) > 4 and lines[4].strip():
-        lines[4] = Font
+    if len(lines) > 5 and lines[5].strip():
+        Font = lines[5].strip()
     else:
         lines.append(Font)
 
@@ -242,8 +257,7 @@ ScreenManager:
             size: dp(25), dp(25)
             pos_hint: {'x': 0.88, 'y': 0.88}
             text: "×"
-            font_name: "Default"
-            font_size: '30sp'
+            font_size: '36sp'
             on_press: app.wipe_custom_flavour(self)
         RoundedNonButton:
             size_hint: None, None
@@ -271,8 +285,7 @@ ScreenManager:
             size: dp(25), dp(25)
             pos_hint: {'x': 0.88, 'y': 0.73}
             text: "×"
-            font_name: "Default"
-            font_size: '30sp'
+            font_size: '36sp'
             on_press: app.wipe_custom_cpu_name(self)
         RoundedButton:
             size_hint: None, None
@@ -285,10 +298,17 @@ ScreenManager:
             	app.root.transition.direction = "left"
             	app.root.current = "font picker"    
         RoundedButton:
+            size_hint: None, None
+            size: dp(25), dp(25)
+            pos_hint: {'x': 0.88, 'y': 0.58}
+            text: "×"
+            font_size: '36sp'
+            on_press: app.wipe_custom_font(self)
+        RoundedButton:
             text: "Save and Go Back"
             size_hint: None, None
             size: dp(320), dp(60)
-            pos_hint: {'x': 0.1, 'y': 0.1}
+            pos_hint: {'x': 0.11, 'y': 0.1}
             font_name: "Default"
             font_size: '24sp'
             on_release:
@@ -383,7 +403,7 @@ class RoundedNonButton(ButtonBehavior, Label):
     text = StringProperty('')
 
 class AndroidFetch(App):
-    button_title = StringProperty(f"AndroidFetch v0.7.1")
+    button_title = StringProperty(f"AndroidFetch v0.7.2")
     button0_text =StringProperty(f"Android {AndroidInfo} \n{AndroidFlavour} \nSDK {SDKInfo}")
     button1_text = StringProperty(f"Bootloader: {BootloaderInfo} {KnoxVersion} \nSELinux: {SELinux}")
     button2_text = StringProperty(f"VNDK Version: {VNDKInfo} \nKernel Version: {KernelInfo}")
@@ -396,7 +416,7 @@ class AndroidFetch(App):
         global ButtonPressNum
         ButtonPressNum += 1
         if ButtonPressNum > 4:
-            self.button_title = "AndroidFetch v0.7.1 - Made by cocobo1 :)"
+            self.button_title = "AndroidFetch v0.7.2 - Made by cocobo1 :)"
              
     def open_website(self, url):
     	webbrowser.open(url)
@@ -414,6 +434,14 @@ class AndroidFetch(App):
             lines = file.readlines()
         if lines:
             lines[3] = "\n"
+        with open("config.txt", "w") as file:
+             file.writelines(lines)
+             
+    def wipe_custom_font(self, instance):
+        with open("config.txt", "r") as file:
+            lines = file.readlines()
+        if lines:
+            lines[5] = "\n"
         with open("config.txt", "w") as file:
              file.writelines(lines)
 
