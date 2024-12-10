@@ -12,5 +12,6 @@ to support more android versions/manufacturers/flavours!
 It collects your hardware info, date and time, software info and country through
 use of your sim card, so if you don't wish to share those you may delete them from
 the output, or remove your simcard before running it.
+The file is found at the root of the github repo
 
 Submit them in the discussions tab! https://github.com/FastCocobo/AndroidFetch/discussions
