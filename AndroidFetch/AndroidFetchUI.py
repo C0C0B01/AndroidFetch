@@ -11,6 +11,7 @@ from kivy.properties import StringProperty, BooleanProperty
 
 import subprocess
 import webbrowser
+from functools import lru_cache
 
 ButtonPressNum = 0
 TitleSecret = ""
@@ -18,12 +19,10 @@ CustomFlavour = ""
 CustomCPUName = ""
 PickedFont = ""
 
+@lru_cache(maxsize=None)
 def GetProp(Prop):
     result = subprocess.run(f"getprop {Prop}", shell=True, capture_output=True, text=True)
-    if result.returncode == 0:
-        return result.stdout.strip()
-    else:
-        return f"Error: {Prop} not found or failed to execute."
+    return result.stdout.strip() if result.returncode == 0 else f"Error: {Prop} not found or failed to execute."
 
 SDKInfo = GetProp("ro.build.version.sdk")
 AndroidInfo = GetProp("ro.build.version.release")
@@ -103,8 +102,11 @@ Font = "Fonts/NotoSans-Regular.ttf"
 with open("config.txt", "r") as file:
     lines = file.readlines()
 if lines:
-    if lines[4] != "":
+    if len(lines) > 4 and lines[4].strip():
         lines[4] = Font
+    else:
+        lines.append(Font)
+
 
 LabelBase.register(name="Default", fn_regular=Font)
 LabelBase.register(name="NotoEmojis", fn_regular="Fonts/NotoEmoji-Regular.ttf")
