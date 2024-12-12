@@ -1,5 +1,3 @@
-# Made by cocobo1
-
 from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.behaviors import ButtonBehavior
@@ -48,14 +46,13 @@ WideColourInfo = WideColourInfo.replace("false", "unsupported")
 VariableFPS = GetProp("ro.surface_flinger.use_content_detection_for_refresh_rate")
 VariableFPS = VariableFPS.replace("true", "supported")
 VariableFPS = VariableFPS.replace("false", "unsupported")
-OneUiVersion = GetProp("ro.build.version.oneui")
-OneUiVersion = OneUiVersion.replace("0", ".")
-OneUiVersion = OneUiVersion.replace("..", "")
-if OneUiVersion != "":
-	AndroidFlavour = "OneUi " + OneUiVersion
 if PhoneMaker == "samsung":
 	KnoxVersion = GetProp("net.knoxvpn.version")
 	KnoxVersion = "\nKnox Version: " + KnoxVersion
+	OneUiVersion = GetProp("ro.build.version.oneui")
+	OneUiVersion = OneUiVersion.replace("0", ".")
+	OneUiVersion = OneUiVersion.replace("..", "")
+	AndroidFlavour = "OneUi " + OneUiVersion
 
 class MainScreen(Screen):
     pass
@@ -403,7 +400,7 @@ class RoundedNonButton(ButtonBehavior, Label):
     text = StringProperty('')
 
 class AndroidFetch(App):
-    button_title = StringProperty(f"AndroidFetch v0.7.2")
+    button_title = StringProperty(f"AndroidFetch v0.7.3")
     button0_text =StringProperty(f"Android {AndroidInfo} \n{AndroidFlavour} \nSDK {SDKInfo}")
     button1_text = StringProperty(f"Bootloader: {BootloaderInfo} {KnoxVersion} \nSELinux: {SELinux}")
     button2_text = StringProperty(f"VNDK Version: {VNDKInfo} \nKernel Version: {KernelInfo}")
@@ -416,7 +413,7 @@ class AndroidFetch(App):
         global ButtonPressNum
         ButtonPressNum += 1
         if ButtonPressNum > 4:
-            self.button_title = "AndroidFetch v0.7.2 - Made by cocobo1 :)"
+            self.button_title = "AndroidFetch v0.7.3 - Made by cocobo1 :)"
              
     def open_website(self, url):
     	webbrowser.open(url)
