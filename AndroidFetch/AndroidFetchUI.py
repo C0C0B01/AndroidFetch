@@ -6,6 +6,7 @@ from kivy.properties import ColorProperty, StringProperty
 from kivy.core.text import LabelBase
 from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
 from kivy.properties import StringProperty, BooleanProperty
+from kivy.uix.image import Image
 
 import subprocess
 import webbrowser
@@ -53,9 +54,18 @@ if PhoneMaker == "samsung":
 	OneUiVersion = OneUiVersion.replace("0", ".")
 	OneUiVersion = OneUiVersion.replace("..", "")
 	AndroidFlavour = "OneUi " + OneUiVersion
+	
+AndroidIcon = "Icons/Android/" + AndroidInfo + ".png"   
+with open("config.txt", "r") as file:
+    lines = file.readlines()
+if lines:
+    if len(lines) > 7 and lines[7].strip():
+        AndroidIcon = lines[7].strip()
+    else:
+        lines.append(AndroidIcon)
 
 class MainScreen(Screen):
-    pass
+    AndroidIconShow = StringProperty(AndroidIcon)
 
 class SettingsScreen(Screen):
     flavour = StringProperty(CustomFlavour)
@@ -97,6 +107,27 @@ class FontPickerScreen(Screen):
                 print(f"Font '{app.PickedFont}' successfully written to config.txt")
             except Exception as e:
                 print(f"Error writing to config file: {e}")
+                
+class IconPickerScreen(Screen):
+    def select_icon(self, selection):
+        app = App.get_running_app()
+        if selection:
+            app.PickedIcon = selection[0] 
+            try:
+                with open("config.txt", "r") as file:
+                    lines = file.readlines()
+            except FileNotFoundError:
+                lines = ["\n"] * 7
+            except Exception as e:
+                print(f"Error reading config file: {e}")
+                lines = ["\n"] * 7
+            lines[7] = f"{app.PickedIcon}\n"
+            try:
+                with open("config.txt", "w") as file:
+                    file.writelines(lines)
+                print(f"Font '{app.PickedFont}' successfully written to config.txt")
+            except Exception as e:
+                print(f"Error writing to config file: {e}")
             
 class SettingsAboutScreen(Screen):
 	pass
@@ -119,7 +150,6 @@ if lines:
     else:
         lines.append(Font)
 
-
 LabelBase.register(name="Default", fn_regular=Font)
 LabelBase.register(name="NotoEmojis", fn_regular="Fonts/NotoEmoji-Regular.ttf")
 
@@ -130,6 +160,7 @@ ScreenManager:
     SettingsScreen:
     SettingsAboutScreen:
     FontPickerScreen:
+    IconPickerScreen:
 
 <RoundedButton>:
     canvas.before:
@@ -160,14 +191,11 @@ ScreenManager:
         font_name: "Default"
         font_size: '20sp'
         on_press: app.secret_title(self)
-
-    RoundedButton:
-        text: app.button0_text
+    Image:
+        source: root.AndroidIconShow
+        size: dp(250), dp(250)
         size_hint: None, None
-        size: dp(300), dp(300)
-        font_name: "Default"
-        font_size: '30sp'
-        pos_hint: {'x': 0.14, 'y': 0.55}
+        pos_hint: {'x': 0.2, 'y': 0.58}
     RoundedButton:
         text: app.button1_text
         size_hint: None, None
@@ -222,7 +250,7 @@ ScreenManager:
         RoundedButton:
             size_hint: None, None
             size: dp(370), dp(100)
-            pos_hint: {'x': 0.05, 'y': 0.35}
+            pos_hint: {'x': 0.05, 'y': 0.2}
             text: "About AndroidFetch"
             font_name: "Default"
             font_size: '18sp'
@@ -287,13 +315,13 @@ ScreenManager:
         RoundedButton:
             size_hint: None, None
             size: dp(370), dp(100)
-            pos_hint: {'x': 0.05, 'y': 0.50}
+            pos_hint: {'x': 0.05, 'y': 0.5}
             text: "Custom Fonts"
             font_name: "Default"
             font_size: '18sp'
             on_release:
             	app.root.transition.direction = "left"
-            	app.root.current = "font picker"    
+            	app.root.current = "font picker"
         RoundedButton:
             size_hint: None, None
             size: dp(25), dp(25)
@@ -301,6 +329,30 @@ ScreenManager:
             text: "×"
             font_size: '36sp'
             on_press: app.wipe_custom_font(self)
+        RoundedButton:
+            size_hint: None, None
+            size: dp(370), dp(100)
+            pos_hint: {'x': 0.05, 'y': 0.35}
+            text: "Custom Version Icon"
+            font_name: "Default"
+            font_size: '18sp'
+            on_release:
+            	app.root.transition.direction = "left"
+            	app.root.current = "icon picker"
+        RoundedButton:
+            size_hint: None, None
+            size: dp(25), dp(25)
+            pos_hint: {'x': 0.88, 'y': 0.43}
+            text: "×"
+            font_size: '36sp'
+            on_press: app.wipe_custom_icon(self)
+        RoundedButton:
+            size_hint: None, None
+            size: dp(25), dp(25)
+            pos_hint: {'x': 0.88, 'y': 0.58}
+            text: "×"
+            font_size: '36sp'
+            on_press: app.wipe_custom_icon(self)
         RoundedButton:
             text: "Save and Go Back"
             size_hint: None, None
@@ -352,7 +404,7 @@ ScreenManager:
             font_size: '18sp'
             on_release: app.open_website("https://github.com/FastCocobo/AndroidFetch")
         Image:
-        	source: 'Icons/Github.png'
+        	source: 'Icons/Textures/Github.png'
         	pos_hint: {'x': 0.1, 'y': 0.375}
         	size_hint: None, None
         	size: dp(60), dp(60)
@@ -387,6 +439,37 @@ ScreenManager:
         	size: dp(100), dp(80)
             font_name: "NotoEmojis"
             font_size: '30sp'
+            
+<IconPickerScreen>:
+    name: "icon picker"
+    FloatLayout:
+        FileChooserListView:
+            id: filechooser
+            filters: ['*.png']
+            path: "/storage/emulated/0/"
+        	pos_hint: {'x': 0, 'y': 0.2}
+        	size_hint: None, None
+        	size: dp(400), dp(700)
+            font_name: "Default"
+            font_size: '18sp'
+        RoundedButton:
+            text: "Use Selected PNG"
+            on_press: root.select_icon(filechooser.selection)
+        	pos_hint: {'x': 0.04, 'y': 0.05}
+        	size_hint: None, None
+        	size: dp(240), dp(80)
+            font_name: "Default"
+            font_size: '18sp'
+        RoundedButton:
+            text: "⬅"
+            on_release:
+                app.root.transition.direction = "right"
+                app.root.current = "settings"
+        	pos_hint: {'x': 0.65, 'y': 0.05}
+        	size_hint: None, None
+        	size: dp(100), dp(80)
+            font_name: "NotoEmojis"
+            font_size: '30sp'
 """
 
 class RoundedButton(ButtonBehavior, Label):
@@ -400,20 +483,19 @@ class RoundedNonButton(ButtonBehavior, Label):
     text = StringProperty('')
 
 class AndroidFetch(App):
-    button_title = StringProperty(f"AndroidFetch v0.7.3")
-    button0_text =StringProperty(f"Android {AndroidInfo} \n{AndroidFlavour} \nSDK {SDKInfo}")
-    button1_text = StringProperty(f"Bootloader: {BootloaderInfo} {KnoxVersion} \nSELinux: {SELinux}")
+    button_title = StringProperty(f"AndroidFetch v0.8")
+    button1_text = StringProperty(f"Android {AndroidInfo} \n{AndroidFlavour} \nSDK {SDKInfo}")
     button2_text = StringProperty(f"VNDK Version: {VNDKInfo} \nKernel Version: {KernelInfo}")
     button3_text = StringProperty(f"Phone: {ModelName} \nManufactorer: {PhoneMaker}")
-    button4_text = StringProperty(f"CPU: {CPUInfo} \nManufactorer: {CPUMaker} \nArch: {ArchInfo}")
-    button5_text = StringProperty(f"Language: {Language} \nTime Zone: {TimeZone}")
+    button4_text = StringProperty(f"Bootloader: {BootloaderInfo} {KnoxVersion} \nSELinux: {SELinux}")
+    button5_text = StringProperty(f"CPU: {CPUInfo} \nManufactorer: {CPUMaker} \nArch: {ArchInfo}")
     button6_text = StringProperty(f"HDR: {HDRInfo} \nWide Colour: {WideColourInfo} \nVariable FPS: {VariableFPS}")
         
     def secret_title(self, instance):
         global ButtonPressNum
         ButtonPressNum += 1
         if ButtonPressNum > 4:
-            self.button_title = "AndroidFetch v0.7.3 - Made by cocobo1 :)"
+            self.button_title = "AndroidFetch v0.8 - Made by cocobo1 :)"
              
     def open_website(self, url):
     	webbrowser.open(url)
@@ -439,6 +521,14 @@ class AndroidFetch(App):
             lines = file.readlines()
         if lines:
             lines[5] = "\n"
+        with open("config.txt", "w") as file:
+             file.writelines(lines)
+             
+    def wipe_custom_icon(self, instance):
+        with open("config.txt", "r") as file:
+            lines = file.readlines()
+        if lines:
+            lines[7] = "\n"
         with open("config.txt", "w") as file:
              file.writelines(lines)
 

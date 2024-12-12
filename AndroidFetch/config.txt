@@ -4,4 +4,6 @@
 
 # Custom Font:
 
-# End of stuff lol
+# Custom Icon:
+/storage/emulated/0/Documents/Python/androidfetch/Icons/Android/10.png
+# end lol
