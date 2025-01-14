@@ -2,14 +2,14 @@ from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.label import Label
-from kivy.properties import ColorProperty, StringProperty
+from kivy.properties import ColorProperty, StringProperty, BooleanProperty
 from kivy.core.text import LabelBase
 from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
-from kivy.properties import StringProperty, BooleanProperty
 from kivy.uix.image import Image
 
 import subprocess
 import webbrowser
+import ast
 from functools import lru_cache
 
 ButtonPressNum = 0
@@ -22,6 +22,8 @@ PickedFont = ""
 def GetProp(Prop):
     result = subprocess.run(f"getprop {Prop}", shell=True, capture_output=True, text=True)
     return result.stdout.strip() if result.returncode == 0 else f"Error: {Prop} not found or failed to execute."
+    
+output = subprocess.run(["getprop"], capture_output=True, text=True)
 
 SDKInfo = GetProp("ro.build.version.sdk")
 AndroidInfo = GetProp("ro.build.version.release")
@@ -37,7 +39,7 @@ KnoxVersion = ""
 AndroidFlavour = "Unknown"
 PhoneMaker = GetProp("ro.product.brand")
 ArchInfo = GetProp("ro.product.cpu.abi")
-CPUInfo = GetProp("ro.netflix.bsp_rev")
+CPUInfo = GetProp("ro.hardware")
 CPUMaker = GetProp("ro.hardware.egl")
 HDRInfo = GetProp("ro.surface_flinger.has_HDR_display")
 HDRInfo = "supported" if HDRInfo == "true" else "unsupported"
@@ -55,6 +57,8 @@ if PhoneMaker == "samsung":
 	OneUiVersion = OneUiVersion.replace("..", "")
 	AndroidFlavour = "OneUi " + OneUiVersion
 	
+GottenProp = GetProp("")
+	
 AndroidIcon = "Icons/Android/" + AndroidInfo + ".png"   
 with open("config.txt", "r") as file:
     lines = file.readlines()
@@ -68,17 +72,23 @@ class MainScreen(Screen):
     AndroidIconShow = StringProperty(AndroidIcon)
 
 class SettingsScreen(Screen):
+    pass
+    
+class YourGetProp(Screen):
+    pass
+    
+class SettingsSubNameScreen(Screen):
     flavour = StringProperty(CustomFlavour)
     cpu_name = StringProperty(CustomCPUName)
-    def save_config(self):
+    def save_config_name(self):
         try:
             with open("config.txt", "r") as file:
                 lines = file.readlines()
         except FileNotFoundError:
-            lines = [""] * 5
+            lines = [""] * 13
         except Exception as e:
             print(f"Error reading config file: {e}")
-            lines = [""] * 5
+            lines = [""] * 13
         
         if self.flavour:
             lines[1] = f"{self.flavour}\n"
@@ -86,6 +96,10 @@ class SettingsScreen(Screen):
             lines[3] = f"{self.cpu_name}\n"
         with open("config.txt", "w") as file:
             file.writelines(lines)
+
+    def save_config_theme(self):
+        with open("config.txt", "r") as file:
+            lines = file.readlines()
 
 class FontPickerScreen(Screen):
     def select_font(self, selection):
@@ -96,10 +110,10 @@ class FontPickerScreen(Screen):
                 with open("config.txt", "r") as file:
                     lines = file.readlines()
             except FileNotFoundError:
-                lines = ["\n"] * 5
+                lines = ["\n"] * 13
             except Exception as e:
                 print(f"Error reading config file: {e}")
-                lines = ["\n"] * 5
+                lines = ["\n"] * 13
             lines[5] = f"{app.PickedFont}\n"
             try:
                 with open("config.txt", "w") as file:
@@ -117,10 +131,10 @@ class IconPickerScreen(Screen):
                 with open("config.txt", "r") as file:
                     lines = file.readlines()
             except FileNotFoundError:
-                lines = ["\n"] * 7
+                lines = ["\n"] * 13
             except Exception as e:
                 print(f"Error reading config file: {e}")
-                lines = ["\n"] * 7
+                lines = ["\n"] * 13
             lines[7] = f"{app.PickedIcon}\n"
             try:
                 with open("config.txt", "w") as file:
@@ -131,11 +145,7 @@ class IconPickerScreen(Screen):
             
 class SettingsAboutScreen(Screen):
 	pass
-	
-with open('config.txt', 'r') as file:
-    lines = file.readlines()
-    CustomFlavour = lines[1].strip()
-    CustomCPUName = lines[3].strip()
+
 if CustomFlavour != "":
 	AndroidFlavour = CustomFlavour
 if CustomCPUName != "":
@@ -153,19 +163,33 @@ if lines:
 LabelBase.register(name="Default", fn_regular=Font)
 LabelBase.register(name="NotoEmojis", fn_regular="Fonts/NotoEmoji-Regular.ttf")
 
+ButtonColour = [0.2, 0.2, 0.2, 1]
+
+class RoundedButton(ButtonBehavior, Label):
+    colour_normal = ButtonColour
+    colour_down = ButtonColour
+    text = StringProperty('')
+    
+class RoundedNonButton(ButtonBehavior, Label):
+    colour_normal = ButtonColour
+    colour_down = ButtonColour
+    text = StringProperty('')
+
 kv = """
 ScreenManager:
     id: screen_manager
     MainScreen:
     SettingsScreen:
     SettingsAboutScreen:
+    SettingsSubNameScreen:
     FontPickerScreen:
     IconPickerScreen:
+    YourGetProp:
 
 <RoundedButton>:
     canvas.before:
         Color:
-            rgb: {'normal': self.color_normal, 'down': self.color_down}[self.state]
+            rgb: {'normal': self.colour_normal, 'down': self.colour_down}[self.state]
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -174,7 +198,7 @@ ScreenManager:
 <RoundedNonButton>:
     canvas.before:
         Color:
-            rgb: {'normal': self.color_normal, 'down': self.color_down}[self.state]
+            rgb: {'normal': self.colour_normal, 'down': self.colour_down}[self.state]
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -201,6 +225,7 @@ ScreenManager:
         size_hint: None, None
         size: dp(150), dp(100)
         font_name: "Default"
+        font_size: '16sp'
         pos_hint: {'x': 0.1, 'y': 0.4}
     RoundedButton:
         text: app.button2_text
@@ -257,6 +282,81 @@ ScreenManager:
             on_release:
             	app.root.transition.direction = "left"
             	app.root.current = "settingsabout"
+        RoundedButton:
+            size_hint: None, None
+            size: dp(370), dp(100)
+            pos_hint: {'x': 0.05, 'y': 0.65}
+            text: "Your Prop"
+            font_name: "Default"
+            font_size: '18sp'
+            on_release:
+            	app.root.transition.direction = "left"
+            	app.root.current = "yourgetprop"
+        RoundedButton:
+            size_hint: None, None
+            size: dp(370), dp(100)
+            pos_hint: {'x': 0.05, 'y': 0.8}
+            text: "Custom Names"
+            font_name: "Default"
+            font_size: '18sp'
+            on_release:
+            	app.root.transition.direction = "left"
+            	app.root.current = "settingsname"
+        RoundedButton:
+            size_hint: None, None
+            size: dp(370), dp(100)
+            pos_hint: {'x': 0.05, 'y': 0.5}
+            text: "Custom Fonts"
+            font_name: "Default"
+            font_size: '18sp'
+            on_release:
+            	app.root.transition.direction = "left"
+            	app.root.current = "font picker"
+        RoundedButton:
+            size_hint: None, None
+            size: dp(25), dp(25)
+            pos_hint: {'x': 0.88, 'y': 0.58}
+            text: "×"
+            font_size: '36sp'
+            on_press: app.wipe_custom_font(self)
+        RoundedButton:
+            size_hint: None, None
+            size: dp(370), dp(100)
+            pos_hint: {'x': 0.05, 'y': 0.35}
+            text: "Custom Version Icon"
+            font_name: "Default"
+            font_size: '18sp'
+            on_release:
+            	app.root.transition.direction = "left"
+            	app.root.current = "icon picker"
+        RoundedButton:
+            size_hint: None, None
+            size: dp(25), dp(25)
+            pos_hint: {'x': 0.88, 'y': 0.43}
+            text: "×"
+            font_size: '36sp'
+            on_press: app.wipe_custom_icon(self)
+        RoundedButton:
+            size_hint: None, None
+            size: dp(25), dp(25)
+            pos_hint: {'x': 0.88, 'y': 0.58}
+            text: "×"
+            font_size: '36sp'
+            on_press: app.wipe_custom_icon(self)
+        RoundedButton:
+            text: "Go Back"
+            size_hint: None, None
+            size: dp(320), dp(60)
+            pos_hint: {'x': 0.11, 'y': 0.1}
+            font_name: "Default"
+            font_size: '24sp'
+            on_release:
+                app.root.transition.direction = "right"
+                app.root.current = "main"
+                
+<SettingsSubNameScreen>:
+    name: "settingsname"
+    FloatLayout:
         RoundedNonButton:
             size_hint: None, None
             size: dp(370), dp(100)
@@ -313,47 +413,6 @@ ScreenManager:
             font_size: '36sp'
             on_press: app.wipe_custom_cpu_name(self)
         RoundedButton:
-            size_hint: None, None
-            size: dp(370), dp(100)
-            pos_hint: {'x': 0.05, 'y': 0.5}
-            text: "Custom Fonts"
-            font_name: "Default"
-            font_size: '18sp'
-            on_release:
-            	app.root.transition.direction = "left"
-            	app.root.current = "font picker"
-        RoundedButton:
-            size_hint: None, None
-            size: dp(25), dp(25)
-            pos_hint: {'x': 0.88, 'y': 0.58}
-            text: "×"
-            font_size: '36sp'
-            on_press: app.wipe_custom_font(self)
-        RoundedButton:
-            size_hint: None, None
-            size: dp(370), dp(100)
-            pos_hint: {'x': 0.05, 'y': 0.35}
-            text: "Custom Version Icon"
-            font_name: "Default"
-            font_size: '18sp'
-            on_release:
-            	app.root.transition.direction = "left"
-            	app.root.current = "icon picker"
-        RoundedButton:
-            size_hint: None, None
-            size: dp(25), dp(25)
-            pos_hint: {'x': 0.88, 'y': 0.43}
-            text: "×"
-            font_size: '36sp'
-            on_press: app.wipe_custom_icon(self)
-        RoundedButton:
-            size_hint: None, None
-            size: dp(25), dp(25)
-            pos_hint: {'x': 0.88, 'y': 0.58}
-            text: "×"
-            font_size: '36sp'
-            on_press: app.wipe_custom_icon(self)
-        RoundedButton:
             text: "Save and Go Back"
             size_hint: None, None
             size: dp(320), dp(60)
@@ -361,9 +420,9 @@ ScreenManager:
             font_name: "Default"
             font_size: '24sp'
             on_release:
-                root.save_config()
+                root.save_config_name()
                 app.root.transition.direction = "right"
-                app.root.current = "main"
+                app.root.current = "settings"
                 
 <SettingsAboutScreen>:
 	name: "settingsabout"
@@ -408,6 +467,35 @@ ScreenManager:
         	pos_hint: {'x': 0.1, 'y': 0.375}
         	size_hint: None, None
         	size: dp(60), dp(60)
+        	
+<YourGetProp>:
+	name: "yourgetprop"
+	FloatLayout:
+        RoundedButton:
+            text: "Your Prop Files"
+            size_hint: None, None
+            size: dp(400), dp(60)
+            pos_hint: {'x': 0, 'y': 0.944}
+            font_name: "Default"
+            font_size: '25sp'
+            on_release:
+                app.root.transition.direction = "right"
+                app.root.current = "settings"
+        Label:
+            text: "⬅"
+            pos_hint: {'x': 0.001, 'y': 0.945}
+            size_hint: None, None
+            size: dp(50), dp(50)
+            font_name: "NotoEmojis"
+            font_size: '32sp'
+
+        RoundedButton:
+        	text: app.whydontitwork
+            pos_hint: {'x': 0.1, 'y': 0.35}
+            size_hint: None, None
+            size: dp(340), dp(200)
+            font_name: "Default"
+            font_size: '18sp'
         	
 <FontPickerScreen>:
     name: "font picker"
@@ -472,30 +560,22 @@ ScreenManager:
             font_size: '30sp'
 """
 
-class RoundedButton(ButtonBehavior, Label):
-    color_normal = ColorProperty([0.2, 0.2, 0.2, 0.2])
-    color_down = ColorProperty([0.4, 0.4, 0.4, 0.2])
-    text = StringProperty('')
-    
-class RoundedNonButton(ButtonBehavior, Label):
-    color_normal = ColorProperty([0.2, 0.2, 0.2, 0.2])
-    color_down = ColorProperty([0.2, 0.2, 0.2, 0.2])
-    text = StringProperty('')
-
 class AndroidFetch(App):
-    button_title = StringProperty(f"AndroidFetch v0.8")
+    button_title = StringProperty(f"AndroidFetch v0.9")
     button1_text = StringProperty(f"Android {AndroidInfo} \n{AndroidFlavour} \nSDK {SDKInfo}")
     button2_text = StringProperty(f"VNDK Version: {VNDKInfo} \nKernel Version: {KernelInfo}")
     button3_text = StringProperty(f"Phone: {ModelName} \nManufactorer: {PhoneMaker}")
     button4_text = StringProperty(f"Bootloader: {BootloaderInfo} {KnoxVersion} \nSELinux: {SELinux}")
     button5_text = StringProperty(f"CPU: {CPUInfo} \nManufactorer: {CPUMaker} \nArch: {ArchInfo}")
     button6_text = StringProperty(f"HDR: {HDRInfo} \nWide Colour: {WideColourInfo} \nVariable FPS: {VariableFPS}")
+    gotten_prop = StringProperty(f"{GottenProp}")
+    whydontitwork = StringProperty(f"Under contruction (was done but makes\n kivy crash, looking for a\n better solution)")
         
     def secret_title(self, instance):
         global ButtonPressNum
         ButtonPressNum += 1
         if ButtonPressNum > 4:
-            self.button_title = "AndroidFetch v0.8 - Made by cocobo1 :)"
+            self.button_title = "AndroidFetch v0.9 - Made by cocobo1 :)"
              
     def open_website(self, url):
     	webbrowser.open(url)
